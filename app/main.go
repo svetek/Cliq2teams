@@ -8,7 +8,7 @@ import (
 
 var tenantID string = "e5fa314d-6060-4810-b263-abdcba14735e"
 var clientID string = "02b48c2b-200c-411e-b8e8-d0c2eb709cb4"
-var clientSecret string = "MX28Q~aA0QFOe80zpUIEYTX5jhpIfIcK2obKwdmq"
+var clientSecret string = ""
 
 var TeamName string = "AMigration-01"
 var TeamDescription string = "Some describtion"
