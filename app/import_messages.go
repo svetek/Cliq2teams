@@ -82,16 +82,13 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 
 		var wg sync.WaitGroup
 		var counter int
+		var msgCount int
 		// Access the converted struct data
 		for _, msg := range messages.Message {
 
 			dateTimeMessage, _ := convertDateTimeForImportFormat(msg.Timestamp)
 			if msg.Text != "" {
 				sendUser := FindUserById(users, msg.Sender.ID)
-				//fmt.Printf("%v | %v - %v | %v \n", dateTimeMessage, msg.Sender.Name, msg.Sender.ID, msg.Text)
-
-				//fmt.Printf("Import message to: %v, TeamID: %v\n", channelID, teamID)
-
 				//Type of user. Possible values are: aadUser, onPremiseAadUser, anonymousGuest, federatedUser, personalMicrosoftAccountUser, skypeUser, phoneUser, unknownFutureValue and emailUser.
 				payload := map[string]interface{}{
 					//"hostedContents": []map[string]interface{}{
@@ -114,25 +111,36 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 					},
 					"createdDateTime": dateTimeMessage,
 				}
-
+				// Run Import Messages and check status code
 				wg.Add(1)
 				counter++
-				fmt.Println("Run count GoRoutine: ", counter)
+				msgCount++
+				fmt.Println("Run count GoRoutine: ", counter, " msg imported: ", msgCount)
 				go func() {
-					defer wg.Done()
-					az.PushMessageMigrate(accessToken, teamID, channelID, payload)
+					condition := false
+					for ok := true; ok; ok = condition {
+						respCode := az.PushMessageMigrate(accessToken, teamID, channelID, payload)
+						if respCode == 429 {
+							condition = false
+							time.Sleep(3 * time.Second)
+						} else if respCode == 201 {
+							condition = true
+						} else if respCode == 403 {
+							condition = true
+						} else {
+							condition = true
+						}
+					}
+					wg.Done()
 				}()
 
-				if counter == 20 {
+				if counter == 5 {
 					counter = 0
 					wg.Wait()
 					time.Sleep(3 * time.Second)
 				}
-
 			}
-
 		}
-
 		return nil
 	})
 

@@ -188,9 +188,11 @@ func CreateChannelMigrate(accessToken string, teamID string, displayName string,
 		fmt.Println("Error unmarshaling JSON:", err)
 		return "", err
 	}
+	//fmt.Println("Response code:", ChannelCreationResponse.statusCode)
+	if ChannelCreationResponse.statusCode != 201 {
 
-	//fmt.Println("Channel ID:", ChannelCreationResponse)
-
+		fmt.Println("Body:", string(body))
+	}
 	return ChannelCreationResponse.Id, nil
 
 }
@@ -239,7 +241,7 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 
 		defer resp.Body.Close()
 		fmt.Println(resp.Status, string(body))
-		fmt.Println(payload)
+		fmt.Println(string(jsonPayload))
 	}
 
 	return resp.StatusCode

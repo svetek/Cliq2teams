@@ -51,11 +51,11 @@ func ReadUsers() (*Users, error) {
 	}
 
 	// Access the parsed data
-	for _, users := range users.Users {
-		fmt.Println("User Name:", users.Name)
-		fmt.Println("ID:", users.ID)
-		fmt.Println()
-	}
+	//for _, users := range users.Users {
+	//	fmt.Println("User Name:", users.Name)
+	//	fmt.Println("ID:", users.ID)
+	//	fmt.Println()
+	//}
 
 	return &users, err
 

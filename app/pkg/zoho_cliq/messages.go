@@ -82,7 +82,7 @@ func ReadMessagesFromFile(filePath string) (*Messages, error) {
 	return &messages, err
 }
 
-func CollectUniqueUsers() {
+func CollectUniqueUsers() (countMessages int, err error) {
 	var users []User
 	uniqueMap := make(map[string]bool)
 
@@ -92,8 +92,8 @@ func CollectUniqueUsers() {
 	}
 
 	for _, channel := range channels.Channels {
-		fmt.Println()
-		fmt.Printf("%v | %v | %v  \n", channel.Name, channel.Description, channel.DataDirectory)
+		//fmt.Println()
+		//fmt.Printf("%v | %v | %v  \n", channel.Name, channel.Description, channel.DataDirectory)
 
 		directory := fmt.Sprintf("files/import/messages/channels/%v/", channel.DataDirectory)
 
@@ -107,11 +107,11 @@ func CollectUniqueUsers() {
 				return nil
 			}
 
-			fmt.Println(path)
+			//fmt.Println(path)
 			messages, err := ReadMessagesFromFile(path)
 
 			for _, msg := range messages.Message {
-
+				countMessages++
 				if !uniqueMap[msg.Sender.ID] {
 					user := User{
 						ID:   msg.Sender.ID,
@@ -146,9 +146,10 @@ func CollectUniqueUsers() {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
-		fmt.Println(user.Name, " - ", user.ID)
 	}
+	fmt.Println("Unique users saved to file: files/output/listUniqUsersFromMessages.txt")
 
 	file.Close()
+	return countMessages, nil
 
 }

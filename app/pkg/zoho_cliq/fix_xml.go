@@ -62,7 +62,7 @@ func fixXML(filePatch string) {
 		return
 	}
 
-	fmt.Println("Keys replaced successfully.")
+	//fmt.Println("Keys replaced successfully.")
 	cmd := exec.Command("mv", filePatch+".tmp", filePatch)
 	err = cmd.Run()
 	if err != nil {
