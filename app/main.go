@@ -97,19 +97,6 @@ func main() {
 
 	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
 
-	//Start create channels and import messages
-
-	//		respCreateChannelCount := make(map[int]int)
-	//fmt.Printf("%v | %v | %v | %v  \n", channelID, channel.Name, channel.Description, channel.DataDirectory)
-	//fmt.Println("Response count:", respCreateChannelCount)
-	//if channelIsNotExistInState {
-	//ch_tmp, _ := az.ListChannels(accessToken, stateApp.TeamId)
-
-	//}
-
-	//os.Exit(1)
-	//ImportMessages(accessToken, azTeam.TeamName, channelID, channel.DataDirectory)
-
 	// Close migrate channel
 	//az.CompleateChannelMigrate(accessToken, azTeam.TeamName, channelID)
 	//}
@@ -171,7 +158,6 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 			}
 		}
 
-		//az.CompleateChannelMigrate(accessToken, stateApp.TeamId, st.ChannelId)
 	}
 
 }

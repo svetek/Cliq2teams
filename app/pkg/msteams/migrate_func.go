@@ -208,8 +208,6 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 		return 0, "", err
 	}
 
-	//fmt.Printf("Try Import message:\n POST URL: %v\n Request: %v\n", url, string(jsonPayload))
-
 	// Create the HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
@@ -229,18 +227,8 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 		return resp.StatusCode, "", err
 	}
 
-	//fmt.Println(resp.Status)
-
-	//if resp.StatusCode != 201 {
-	//Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//fmt.Println("Error reading response body:", err)
-	//fmt.Println(resp.Status, string(body))
-	//fmt.Println(string(jsonPayload))
-	//return resp.StatusCode, err
-	//}
-	//}
+
 	defer resp.Body.Close()
 	return resp.StatusCode, fmt.Sprintf("%v - %v\n", resp.Status, string(body)), nil
 }

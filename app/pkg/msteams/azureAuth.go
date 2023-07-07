@@ -58,14 +58,6 @@ func IsTokenExpired(tokenString string) (bool, error) {
 }
 
 func GetGraphClient(tenantID string, clientID string, clientSecret string) (*msgraphsdk.GraphServiceClient, string, error) {
-	//cred, err := azidentity.NewDeviceCodeCredential(&azidentity.DeviceCodeCredentialOptions{
-	//	TenantID: tenantID,
-	//	ClientID: clientID,
-	//	UserPrompt: func(ctx context.Context, message azidentity.DeviceCodeMessage) error {
-	//		fmt.Println(message.Message)
-	//		return nil
-	//	},
-	//})
 
 	cred, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
 
