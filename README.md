@@ -1,4 +1,8 @@
 # Tool for migrate from Zoho cliq to Micosoft Teams
+## build
+```bash
+GOARCH=amd64 go build -o ../bin/cliq2teams-linux main
+```
 
 ## USAGE 
 Set variables in .env file: 
