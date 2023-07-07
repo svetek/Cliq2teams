@@ -163,10 +163,10 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 					wg.Done()
 				}()
 
-				if counter == 30 {
+				if counter == parallelImportMessages {
 					counter = 0
-					fmt.Println("Run count GoRoutine: ", counter, " msg loaded: ", msgCount)
-					fmt.Println("Response count:", responseCounts)
+					fmt.Println("Run count GoRoutine: ", parallelImportMessages, " msg loaded: ", msgCount)
+					fmt.Println("Import messages response:", responseCounts)
 					wg.Wait()
 					time.Sleep(3 * time.Second)
 				}

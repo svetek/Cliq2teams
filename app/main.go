@@ -7,6 +7,7 @@ import (
 	az "main/pkg/msteams"
 	"main/pkg/zoho_cliq"
 	"os"
+	"strconv"
 )
 
 var tenantID string
@@ -17,6 +18,7 @@ var TeamName string
 var TeamDescription string
 var TeamCreateDate string
 var GuestAzObjectID string
+var parallelImportMessages int
 
 func main() {
 
@@ -34,6 +36,7 @@ func main() {
 	TeamDescription = os.Getenv("TeamDescription")
 	TeamCreateDate = os.Getenv("TeamCreateDate")
 	GuestAzObjectID = os.Getenv("GuestAzObjectID")
+	parallelImportMessages, err = strconv.Atoi(os.Getenv("parallelImportMessages"))
 
 	var stateApp AzTeam
 	// write User list from messages
