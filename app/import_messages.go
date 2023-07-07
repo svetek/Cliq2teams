@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	az "main/pkg/msteams"
 	"main/pkg/zoho_cliq"
 	"os"
@@ -58,6 +59,11 @@ func FindUserById(users *zoho_cliq.Users, id string) zoho_cliq.User {
 
 func ImportMessages(accessToken string, teamID string, channelID string, dataDir string) {
 
+	logFile, err := os.OpenFile("files/output/import-message.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	users, err := zoho_cliq.ReadUsers()
 	if err != nil {
 		fmt.Println("Error Read Users")
@@ -83,8 +89,19 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 		var wg sync.WaitGroup
 		var counter int
 		var msgCount int
+
+		var mutex sync.Mutex
+		responseCounts := make(map[int]int)
+
 		// Access the converted struct data
 		for _, msg := range messages.Message {
+
+			expiredToken, _ := az.IsTokenExpired(accessToken)
+			if expiredToken {
+				// Get access token
+				accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
+				fmt.Println("Token updated!")
+			}
 
 			dateTimeMessage, _ := convertDateTimeForImportFormat(msg.Timestamp)
 			if msg.Text != "" {
@@ -115,32 +132,48 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 				wg.Add(1)
 				counter++
 				msgCount++
-				fmt.Println("Run count GoRoutine: ", counter, " msg imported: ", msgCount)
 				go func() {
 					condition := false
 					for ok := true; ok; ok = condition {
-						respCode := az.PushMessageMigrate(accessToken, teamID, channelID, payload)
+						respCode, respCause, err := az.PushMessageMigrate(accessToken, teamID, channelID, payload)
+
+						mutex.Lock()
+						responseCounts[respCode]++
+						mutex.Unlock()
+
 						if respCode == 429 {
-							condition = false
+							condition = true
 							time.Sleep(3 * time.Second)
 						} else if respCode == 201 {
-							condition = true
-						} else if respCode == 403 {
-							condition = true
+							condition = false
+							//} else if respCode == 403 {
+							//	condition = true
+							//	time.Sleep(1 * time.Second)
+						} else if respCode == 401 {
+							os.Exit(1)
+							//condition = true
 						} else {
-							condition = true
+							condition = false
 						}
+
+						logLine := fmt.Sprintf("%v | %v | %v | %v | %v \n %v | %v", respCode, teamID, channelID, payload, err, dataDir, respCause)
+						_, err = logFile.WriteString(logLine)
+
 					}
 					wg.Done()
 				}()
 
-				if counter == 5 {
+				if counter == 30 {
 					counter = 0
+					fmt.Println("Run count GoRoutine: ", counter, " msg loaded: ", msgCount)
+					fmt.Println("Response count:", responseCounts)
 					wg.Wait()
 					time.Sleep(3 * time.Second)
 				}
 			}
 		}
+
+		logFile.Close()
 		return nil
 	})
 

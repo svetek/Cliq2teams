@@ -104,7 +104,7 @@ func CreateTeamMigrate(accessToken string, teamName string, teamDescription stri
 		location:        resp.Header.Get("Location"),
 	}
 
-	//fmt.Println("Team ID:", teamCreationResponse)
+	fmt.Println("Team ID:", teamCreationResponse)
 
 	return extractTeamID(teamCreationResponse.contentLocation), nil
 }
@@ -127,7 +127,7 @@ func extractTeamID(teamURL string) string {
 	return teamID
 }
 
-func CreateChannelMigrate(accessToken string, teamID string, displayName string, description string, createdDateTime string) (string, error) {
+func CreateChannelMigrate(accessToken string, teamID string, displayName string, description string, createdDateTime string) (int, string, error) {
 
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/teams/%v/channels", teamID)
 
@@ -144,14 +144,14 @@ func CreateChannelMigrate(accessToken string, teamID string, displayName string,
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("Error marshaling JSON payload:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// Create the HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// Set the request headers
@@ -163,14 +163,14 @@ func CreateChannelMigrate(accessToken string, teamID string, displayName string,
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making request:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	defer resp.Body.Close()
@@ -186,18 +186,18 @@ func CreateChannelMigrate(accessToken string, teamID string, displayName string,
 	err = json.Unmarshal(body, &ChannelCreationResponse)
 	if err != nil {
 		fmt.Println("Error unmarshaling JSON:", err)
-		return "", err
+		return 0, "", err
 	}
 	//fmt.Println("Response code:", ChannelCreationResponse.statusCode)
 	if ChannelCreationResponse.statusCode != 201 {
 
 		fmt.Println("Body:", string(body))
 	}
-	return ChannelCreationResponse.Id, nil
+	return ChannelCreationResponse.statusCode, ChannelCreationResponse.Id, nil
 
 }
 
-func PushMessageMigrate(accessToken string, teamID string, channelID string, payload map[string]interface{}) (respCode int) {
+func PushMessageMigrate(accessToken string, teamID string, channelID string, payload map[string]interface{}) (int, string, error) {
 
 	url := fmt.Sprintf("https://graph.microsoft.com/v1.0/teams/%v/channels/%v/messages", teamID, channelID)
 
@@ -205,7 +205,7 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("Error marshaling JSON payload:", err)
-		return
+		return 0, "", err
 	}
 
 	//fmt.Printf("Try Import message:\n POST URL: %v\n Request: %v\n", url, string(jsonPayload))
@@ -214,7 +214,7 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return
+		return 0, "", err
 	}
 
 	// Set the request headers
@@ -226,25 +226,23 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making request:", err)
-		return
+		return resp.StatusCode, "", err
 	}
 
 	//fmt.Println(resp.Status)
 
-	if resp.StatusCode != 201 {
-		//Read the response body
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Error reading response body:", err)
-			return
-		}
-
-		defer resp.Body.Close()
-		fmt.Println(resp.Status, string(body))
-		fmt.Println(string(jsonPayload))
-	}
-
-	return resp.StatusCode
+	//if resp.StatusCode != 201 {
+	//Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	//if err != nil {
+	//fmt.Println("Error reading response body:", err)
+	//fmt.Println(resp.Status, string(body))
+	//fmt.Println(string(jsonPayload))
+	//return resp.StatusCode, err
+	//}
+	//}
+	defer resp.Body.Close()
+	return resp.StatusCode, fmt.Sprintf("%v - %v\n", resp.Status, string(body)), nil
 }
 
 func CompleateChannelMigrate(accessToken string, teamID string, channelID string) {

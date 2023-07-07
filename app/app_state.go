@@ -16,11 +16,12 @@ type AzTeam struct {
 type AzChannel struct {
 	ChannelId            string
 	ChannelName          string
+	ChannelDescription   string
 	ImportMessagesStatus bool
 	DataDirectories      []string
 }
 
-func saveState(state AzTeam) {
+func saveState(state *AzTeam) {
 
 	jsonData, err := json.Marshal(state)
 	if err != nil {

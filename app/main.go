@@ -2,51 +2,107 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
+	"log"
 	az "main/pkg/msteams"
 	"main/pkg/zoho_cliq"
+	"os"
 )
 
-var tenantID string = "e5fa314d-6060-4810-b263-abdcba14735e"
-var clientID string = "02b48c2b-200c-411e-b8e8-d0c2eb709cb4"
-var clientSecret string = ""
+var tenantID string
+var clientID string
+var clientSecret string
 
-var TeamName string = "AMigration-06"
-var TeamDescription string = "Some describtion"
-var TeamCreateDate string = "2015-03-14T11:22:17.043Z"
-var GuestAzObjectID string = "3575eae2-f2d0-4dcd-a8b6-ff8a5b50cc4a"
+var TeamName string
+var TeamDescription string
+var TeamCreateDate string
+var GuestAzObjectID string
 
 func main() {
+
+	// Load global variables from .env
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	tenantID = os.Getenv("tenantID")
+	clientID = os.Getenv("clientID")
+	clientSecret = os.Getenv("clientSecret")
+
+	TeamName = os.Getenv("TeamName")
+	TeamDescription = os.Getenv("TeamDescription")
+	TeamCreateDate = os.Getenv("TeamCreateDate")
+	GuestAzObjectID = os.Getenv("GuestAzObjectID")
+
+	var stateApp AzTeam
 	// write User list from messages
 	countMessages, _ := zoho_cliq.CollectUniqueUsers()
 	fmt.Printf("Count Messages: %v\n", countMessages)
 
-	//Create Team and Channels with migration mode + save state file
-	//stateApp, _ := createTeamsAndChannels()
-	//fmt.Println(stateApp)
-	//saveState(stateApp)
-
-	accessToken, _ := az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-	stateApp, _ := loadState()
-
-	for _, st := range stateApp.Channel {
-		fmt.Println(st.ChannelId, st.ChannelName)
-		for _, dataDir := range st.DataDirectories {
-			fmt.Printf("Try import file: %v\n", dataDir)
-			if st.ImportMessagesStatus == false {
-				ImportMessages(accessToken, stateApp.TeamId, st.ChannelId, dataDir)
-			}
-		}
-
-		// Mark channel is success imported
-		for i := range stateApp.Channel {
-			if stateApp.Channel[i].ChannelName == st.ChannelName {
-				stateApp.Channel[i].ImportMessagesStatus = true
-				saveState(stateApp)
-			}
-		}
-
-		az.CompleateChannelMigrate(accessToken, stateApp.TeamId, st.ChannelId)
+	// Get Access token
+	accessToken, err := az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
+	if err != nil {
+		fmt.Println("Error get token", err)
 	}
+
+	// Check state file if empty create new team and save state file
+	_, err = os.Stat("files/output/app-state.json")
+	if err != nil {
+		//Create Team with migration mode + save state file
+		stateApp.TeamId, err = az.CreateTeamMigrate(accessToken, TeamName, TeamDescription, TeamCreateDate)
+		if err != nil {
+			fmt.Println("Error create Team: ", err)
+		}
+		stateApp.TeamName = TeamName
+		saveState(&stateApp)
+		fmt.Printf("TeamName: %v | TeamID: %v \n", stateApp.TeamName, stateApp.TeamId)
+
+		//Start load channels from XML and save to stateFile
+		channels, err := zoho_cliq.ReadChannels()
+		if err != nil {
+			fmt.Println("Get channel err:", err)
+		}
+
+		for _, channel := range channels.Channels {
+
+			// save data to State
+			channelIsNotExistInState := true
+			for i := range stateApp.Channel {
+				if stateApp.Channel[i].ChannelName == channel.Name {
+					fmt.Println("dublicate found")
+					channelIsNotExistInState = false
+					stateApp.Channel[i].DataDirectories = append(stateApp.Channel[i].DataDirectories, channel.DataDirectory)
+				}
+			}
+
+			if channelIsNotExistInState {
+				stateApp.Channel = append(stateApp.Channel, AzChannel{
+					ChannelId:            "",
+					ChannelName:          channel.Name,
+					ChannelDescription:   channel.Description,
+					ImportMessagesStatus: false,
+					DataDirectories:      append([]string{}, channel.DataDirectory),
+				})
+			}
+			saveState(&stateApp)
+		}
+
+	} else {
+		stateApp, err = loadState()
+	}
+
+	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
+
+	//Start create channels and import messages
+
+	//		respCreateChannelCount := make(map[int]int)
+	//fmt.Printf("%v | %v | %v | %v  \n", channelID, channel.Name, channel.Description, channel.DataDirectory)
+	//fmt.Println("Response count:", respCreateChannelCount)
+	//if channelIsNotExistInState {
+	//ch_tmp, _ := az.ListChannels(accessToken, stateApp.TeamId)
+
+	//}
 
 	//os.Exit(1)
 	//ImportMessages(accessToken, azTeam.TeamName, channelID, channel.DataDirectory)
@@ -59,61 +115,60 @@ func main() {
 
 }
 
-func createTeamsAndChannels() (AzTeam, error) {
-	stateApp := AzTeam{}
-	// Set up authentication
-	accessToken, _ := az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-	fmt.Printf("%v, %v, %v", TeamName, TeamDescription, TeamCreateDate)
+func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken string) {
 
-	//Start Migrate
-	stateApp.TeamName = TeamName
-	stateApp.TeamId, _ = az.CreateTeamMigrate(accessToken, stateApp.TeamName, TeamDescription, TeamCreateDate)
-	fmt.Println("TeamID:", stateApp.TeamId)
-
-	//zoho_cliq.ReadTeams()
-	channels, err := zoho_cliq.ReadChannels()
-	if err != nil {
-		fmt.Println("Get channel err:", err)
-		return stateApp, err
+	expiredToken, _ := az.IsTokenExpired(accessToken)
+	if expiredToken {
+		// Get access token
+		accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
+		fmt.Println("Token updated!")
 	}
 
-	// Access the parsed data
-	for _, channel := range channels.Channels {
+	// Create Channel and Import messages to channel
+	respCreateChannelCount := make(map[int]int)
 
-		channelID, err := az.CreateChannelMigrate(accessToken, stateApp.TeamId, channel.Name, channel.Description, TeamCreateDate)
+	for i, st := range stateApp.Channel {
+		if st.ImportMessagesStatus {
+			continue
+		}
+		// Create channel
+		respCode, channelID, err := az.CreateChannelMigrate(accessToken, stateApp.TeamId, st.ChannelName, st.ChannelDescription, TeamCreateDate)
 		if err != nil {
 			fmt.Println("Error create channel:", err)
 			break
 		}
-
-		// save data to State
-		channelIsNotExistInState := true
-		for i := range stateApp.Channel {
-			if stateApp.Channel[i].ChannelName == channel.Name {
-				fmt.Println("dublicate found")
-				channelIsNotExistInState = false
-				stateApp.Channel[i].DataDirectories = append(stateApp.Channel[i].DataDirectories, channel.DataDirectory)
-			}
-		}
-
-		if channelIsNotExistInState {
+		if st.ChannelName == "general" {
 			ch_tmp, _ := az.ListChannels(accessToken, stateApp.TeamId)
 			for _, ch := range ch_tmp.Channels {
 				if ch.DisplayName == "General" {
 					channelID = ch.ID
 				}
 			}
-
-			stateApp.Channel = append(stateApp.Channel, AzChannel{
-				ChannelId:            channelID,
-				ChannelName:          channel.Name,
-				ImportMessagesStatus: false,
-				DataDirectories:      append([]string{}, channel.DataDirectory),
-			})
 		}
-		//fmt.Println(stateApp)
-		fmt.Printf("%v | %v | %v | %v  \n", channelID, channel.Name, channel.Description, channel.DataDirectory)
+		fmt.Println("chid:", channelID)
+		stateApp.Channel[i].ChannelId = channelID
+		saveState(stateApp)
+
+		respCreateChannelCount[respCode]++
+		fmt.Println(st.ChannelId, st.ChannelName)
+		fmt.Println(respCreateChannelCount)
+
+		for _, dataDir := range st.DataDirectories {
+			fmt.Printf("Try import file: %v\n", dataDir)
+			if st.ImportMessagesStatus == false {
+				ImportMessages(accessToken, stateApp.TeamId, channelID, dataDir)
+			}
+		}
+
+		// Mark channel is success imported
+		for i := range stateApp.Channel {
+			if stateApp.Channel[i].ChannelName == st.ChannelName {
+				stateApp.Channel[i].ImportMessagesStatus = true
+				saveState(stateApp)
+			}
+		}
+
+		//az.CompleateChannelMigrate(accessToken, stateApp.TeamId, st.ChannelId)
 	}
 
-	return stateApp, nil
 }

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/golang-jwt/jwt/v4"
 	msgraphsdk "github.com/microsoftgraph/msgraph-sdk-go"
 	"log"
+	"time"
 )
 
 func GetAzureTokenSecrets(tenantID string, clientID string, clientSecret string) (string, error) {
@@ -30,6 +32,29 @@ func GetAzureTokenSecrets(tenantID string, clientID string, clientSecret string)
 
 	return token.Token, err
 
+}
+
+func IsTokenExpired(tokenString string) (bool, error) {
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return false, fmt.Errorf("error parsing token: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, fmt.Errorf("invalid token claims")
+	}
+
+	expirationTime, ok := claims["exp"].(float64)
+	if !ok {
+		return false, fmt.Errorf("invalid expiration time in token")
+	}
+
+	expiration := time.Unix(int64(expirationTime), 0)
+	currentTime := time.Now().Add(-2 * time.Minute)
+
+	//fmt.Println(expiration, " | ", currentTime)
+	return expiration.Before(currentTime), nil
 }
 
 func GetGraphClient(tenantID string, clientID string, clientSecret string) (*msgraphsdk.GraphServiceClient, string, error) {
