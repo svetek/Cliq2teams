@@ -125,6 +125,17 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 			fmt.Println("Error create channel:", err)
 			break
 		}
+
+		// Restore import channel if exist but no in state file
+		if respCode == 400 && st.ChannelName != "general" {
+			ch_tmp, _ := az.ListChannels(accessToken, stateApp.TeamId)
+			for _, ch := range ch_tmp.Channels {
+				if ch.DisplayName == st.ChannelName {
+					channelID = ch.ID
+				}
+			}
+		}
+		// Get channel id
 		if st.ChannelName == "general" {
 			ch_tmp, _ := az.ListChannels(accessToken, stateApp.TeamId)
 			for _, ch := range ch_tmp.Channels {

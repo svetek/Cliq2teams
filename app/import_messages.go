@@ -7,6 +7,7 @@ import (
 	"main/pkg/zoho_cliq"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -105,15 +106,32 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 			}
 
 			dateTimeMessage, _ := convertDateTimeForImportFormat(msg.Timestamp)
-			if msg.Text != "" || msg.Comment != "" {
+			if msg.Type == "text" || msg.Type == "file" {
 				sendUser := FindUserById(users, msg.Sender.ID)
 
 				if msg.Text != "" {
+					// Define the regular expression pattern
+					//pattern := `\d+`
+
+					// Compile the regular expression
+					//reg := regexp.MustCompile(pattern)
+					// Find the first match
+					//match := reg.FindString(msg.Text)
+					//fmt.Println("User ZohoID: ", match)
+					//
+					//if match != "" {
+					//	pattern = `{@(\d+)}`
+					//	reg = regexp.MustCompile(pattern)
+					//	replacedString := reg.ReplaceAllString(msg.Text, "ZOHO USER")
+					//	fmt.Println("Modify Zoho Text: ", replacedString)
+					//}
+
 					textMessage = msg.Text
 				}
 
 				if msg.Comment != "" {
-					textMessage = fmt.Sprintf("%v <a href=\"%v\">%v [%v]</a> \n", msg.Comment, msg.FileUrl, msg.FileName, msg.FileSize)
+					bytes, _ := strconv.ParseInt(msg.FileSize, 10, 64)
+					textMessage = fmt.Sprintf("%v <a href=\"%v\">%v [%v]</a> \n", msg.Comment, msg.FileUrl, msg.FileName, float64(bytes)/(1024*1024))
 				}
 
 				//Type of user. Possible values are: aadUser, onPremiseAadUser, anonymousGuest, federatedUser, personalMicrosoftAccountUser, skypeUser, phoneUser, unknownFutureValue and emailUser.
@@ -166,7 +184,10 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 							fmt.Println("Got 405 error, please restart it")
 							time.Sleep(3 * time.Second)
 							os.Exit(1)
-							condition = true
+							//condition = true
+						} else if respCode == 412 {
+							fmt.Println("Got 412 error: ", payload)
+							condition = false
 						} else {
 							condition = false
 						}
