@@ -97,7 +97,7 @@ func main() {
 	}
 
 	// Create channel and import messages
-	//CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
+	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
 
 	// Close migrate channels and Teams
 	CloseMigration(&stateApp, accessToken)
@@ -105,13 +105,6 @@ func main() {
 }
 
 func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken string) {
-
-	expiredToken, _ := az.IsTokenExpired(accessToken)
-	if expiredToken {
-		// Get access token
-		accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-		fmt.Println("Token updated!")
-	}
 
 	// Create Channel and Import messages to channel
 	respCreateChannelCount := make(map[int]int)
@@ -121,6 +114,12 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 			continue
 		}
 		// Create channel
+		expiredToken, _ := az.IsTokenExpired(accessToken)
+		if expiredToken {
+			// Get access token
+			accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
+			fmt.Println("Token updated!")
+		}
 		respCode, channelID, err := az.CreateChannelMigrate(accessToken, stateApp.TeamId, st.ChannelName, st.ChannelDescription, TeamCreateDate)
 		if err != nil {
 			fmt.Println("Error create channel:", err)

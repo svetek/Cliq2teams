@@ -163,9 +163,9 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 							os.Exit(1)
 							//condition = true
 						} else if respCode == 405 {
-							accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-							fmt.Println("Token updated after got 405 error")
+							fmt.Println("Got 405 error, please restart it")
 							time.Sleep(3 * time.Second)
+							os.Exit(1)
 							condition = true
 						} else {
 							condition = false
