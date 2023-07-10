@@ -145,13 +145,8 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 		for _, dataDir := range st.DataDirectories {
 			fmt.Printf("Try import file: %v\n", dataDir)
 			if st.ImportMessagesStatus == false {
-				statusImportedFiles, _ := ImportMessages(accessToken, stateApp.TeamId, channelID, dataDir)
-				for i := range stateApp.Channel {
-					if stateApp.Channel[i].ChannelName == st.ChannelName {
-						stateApp.Channel[i].ImportedFiles = statusImportedFiles
-						saveState(stateApp)
-					}
-				}
+				ImportMessages(accessToken, stateApp.TeamId, channelID, dataDir, stateApp)
+
 			}
 		}
 

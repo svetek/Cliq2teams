@@ -57,7 +57,7 @@ func FindUserById(users *zoho_cliq.Users, id string) zoho_cliq.User {
 	}
 }
 
-func ImportMessages(accessToken string, teamID string, channelID string, dataDir string) ([]StatusImportedMessages, error) {
+func ImportMessages(accessToken string, teamID string, channelID string, dataDir string, stateApp *AzTeam) ([]StatusImportedMessages, error) {
 
 	var respCodes []StatusImportedMessages
 	logFile, err := os.OpenFile("files/output/import-message.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
@@ -101,7 +101,7 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 			if expiredToken {
 				// Get access token
 				accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-				fmt.Println("Token updated!")
+				fmt.Println("Token updated when start try import message")
 			}
 
 			dateTimeMessage, _ := convertDateTimeForImportFormat(msg.Timestamp)
@@ -155,7 +155,7 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 							//condition = true
 						} else if respCode == 405 {
 							accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
-							fmt.Println("Token updated!")
+							fmt.Println("Token updated after got 405 error")
 							time.Sleep(3 * time.Second)
 							condition = true
 						} else {
@@ -178,6 +178,12 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 						RespStatus: responseCounts,
 					}
 					respCodes = append(respCodes, *tmpResp)
+					for i := range stateApp.Channel {
+						if stateApp.Channel[i].ChannelId == channelID {
+							stateApp.Channel[i].ImportedFiles = respCodes
+							saveState(stateApp)
+						}
+					}
 					fmt.Println("Run count GoRoutine: ", parallelImportMessages, " msg loaded: ", msgCount)
 					fmt.Println("Import messages response:", responseCounts)
 					time.Sleep(3 * time.Second)
