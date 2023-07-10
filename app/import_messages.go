@@ -96,7 +96,7 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 
 		// Access the converted struct data
 		for _, msg := range messages.Message {
-
+			var textMessage string = " "
 			expiredToken, _ := az.IsTokenExpired(accessToken)
 			if expiredToken {
 				// Get access token
@@ -105,8 +105,17 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 			}
 
 			dateTimeMessage, _ := convertDateTimeForImportFormat(msg.Timestamp)
-			if msg.Text != "" {
+			if msg.Text != "" || msg.Comment != "" {
 				sendUser := FindUserById(users, msg.Sender.ID)
+
+				if msg.Text != "" {
+					textMessage = msg.Text
+				}
+
+				if msg.Comment != "" {
+					textMessage = fmt.Sprintf("%v <a href=\"%v\">%v [%v]</a> \n", msg.Comment, msg.FileUrl, msg.FileName, msg.FileSize)
+				}
+
 				//Type of user. Possible values are: aadUser, onPremiseAadUser, anonymousGuest, federatedUser, personalMicrosoftAccountUser, skypeUser, phoneUser, unknownFutureValue and emailUser.
 				payload := map[string]interface{}{
 					//"hostedContents": []map[string]interface{}{
@@ -118,7 +127,7 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 					//},
 					"body": map[string]interface{}{
 						"contentType": "html",
-						"content":     msg.Text,
+						"content":     textMessage,
 					},
 					"from": map[string]interface{}{
 						"user": map[string]interface{}{

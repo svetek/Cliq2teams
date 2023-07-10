@@ -97,10 +97,10 @@ func main() {
 	}
 
 	// Create channel and import messages
-	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
+	//CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
 
 	// Close migrate channels and Teams
-	//closeMigration(&stateApp, accessToken)
+	CloseMigration(&stateApp, accessToken)
 
 }
 
@@ -162,7 +162,7 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 
 }
 
-func closeMigration(stateApp *AzTeam, accessToken string) {
+func CloseMigration(stateApp *AzTeam, accessToken string) {
 
 	for _, st := range stateApp.Channel {
 		//stateApp.Channel[i].ImportMessagesStatus = true

@@ -15,18 +15,25 @@ type Messages struct {
 }
 
 type Message struct {
-	IsRead    string        `xml:"is_read"`
-	ID        string        `xml:"id"`
-	Time      string        `xml:"time"`
-	Type      string        `xml:"type"`
-	Revision  string        `xml:"revision"`
-	Timestamp string        `xml:"timestamp"`
-	Sender    Sender        `xml:"sender"`
-	Content   string        `xml:"content>type,omitempty"`
-	Text      string        `xml:"content>text,omitempty"`
-	Data      string        `xml:"content>data>users" xml:"innerxml"`
-	Source    MessageSource `xml:"message_source"`
-	Mentions  string        `xml:"-"`
+	IsRead     string        `xml:"is_read"`
+	ID         string        `xml:"id"`
+	Time       string        `xml:"time"`
+	Type       string        `xml:"type"`
+	Revision   string        `xml:"revision"`
+	Timestamp  string        `xml:"timestamp"`
+	Sender     Sender        `xml:"sender"`
+	Content    string        `xml:"content>type,omitempty"`
+	Text       string        `xml:"content>text,omitempty"`
+	Comment    string        `xml:"content>comment,omitempty"`
+	FileUrl    string        `xml:"content>file>url,omitempty"`
+	FileName   string        `xml:"content>file>name,omitempty"`
+	FileType   string        `xml:"content>file>type,omitempty"`
+	FileSize   string        `xml:"content>file>dimensions>size,omitempty"`
+	FileHeight string        `xml:"content>file>dimensions>height,omitempty"`
+	FileWidth  string        `xml:"content>file>dimensions>width,omitempty"`
+	Data       string        `xml:"content>data>users" xml:"innerxml"`
+	Source     MessageSource `xml:"message_source"`
+	Mentions   string        `xml:"-"`
 }
 
 type Sender struct {
