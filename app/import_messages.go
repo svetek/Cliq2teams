@@ -131,7 +131,7 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 
 				if msg.Comment != "" {
 					bytes, _ := strconv.ParseInt(msg.FileSize, 10, 64)
-					textMessage = fmt.Sprintf("%v <a href=\"%v\">%v [%v]</a> \n", msg.Comment, msg.FileUrl, msg.FileName, float64(bytes)/(1024*1024))
+					textMessage = fmt.Sprintf("%v <a href=\"%v\">%v [%vMb]</a> \n", msg.Comment, msg.FileUrl, msg.FileName, float64(bytes)/(1024*1024))
 				}
 
 				//Type of user. Possible values are: aadUser, onPremiseAadUser, anonymousGuest, federatedUser, personalMicrosoftAccountUser, skypeUser, phoneUser, unknownFutureValue and emailUser.
