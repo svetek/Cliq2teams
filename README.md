@@ -1,7 +1,7 @@
 # Tool for migrate from Zoho cliq to Micosoft Teams
 ## build
 ```bash
-GOARCH=amd64 go build -o ../bin/cliq2teams-linux main
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ../bin/cliq2teams-linux main
 ```
 
 ## USAGE 
@@ -20,5 +20,7 @@ parallelImportMessages=30
 ```
 
 ## create files/import directory and put export Zoho Cliq files
-
+```bash
+mkdir -p files/output && mkdir -p files/import
+```
 

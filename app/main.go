@@ -38,6 +38,7 @@ func main() {
 	GuestAzObjectID = os.Getenv("GuestAzObjectID")
 	parallelImportMessages, err = strconv.Atoi(os.Getenv("parallelImportMessages"))
 
+	// Init State App
 	var stateApp AzTeam
 	// write User list from messages
 	countMessages, _ := zoho_cliq.CollectUniqueUsers()
@@ -95,13 +96,11 @@ func main() {
 		stateApp, err = loadState()
 	}
 
+	// Create channel and import messages
 	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
 
-	// Close migrate channel
-	//az.CompleateChannelMigrate(accessToken, azTeam.TeamName, channelID)
-	//}
-	// Close migrate Teams
-	//az.CompleateTeamMigrate(accessToken, stateApp.TeamName)
+	// Close migrate channels and Teams
+	//closeMigration(&stateApp, accessToken)
 
 }
 
@@ -146,7 +145,13 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 		for _, dataDir := range st.DataDirectories {
 			fmt.Printf("Try import file: %v\n", dataDir)
 			if st.ImportMessagesStatus == false {
-				ImportMessages(accessToken, stateApp.TeamId, channelID, dataDir)
+				statusImportedFiles, _ := ImportMessages(accessToken, stateApp.TeamId, channelID, dataDir)
+				for i := range stateApp.Channel {
+					if stateApp.Channel[i].ChannelName == st.ChannelName {
+						stateApp.Channel[i].ImportedFiles = statusImportedFiles
+						saveState(stateApp)
+					}
+				}
 			}
 		}
 
@@ -159,5 +164,18 @@ func CreateChannelsAndImportMessagesToChannel(stateApp *AzTeam, accessToken stri
 		}
 
 	}
+
+}
+
+func closeMigration(stateApp *AzTeam, accessToken string) {
+
+	for _, st := range stateApp.Channel {
+		//stateApp.Channel[i].ImportMessagesStatus = true
+		fmt.Println("close migration:", st.ChannelName, " | ", st.ChannelId)
+		az.CompleateChannelMigrate(accessToken, stateApp.TeamName, st.ChannelId)
+
+	}
+
+	az.CompleateTeamMigrate(accessToken, stateApp.TeamId)
 
 }

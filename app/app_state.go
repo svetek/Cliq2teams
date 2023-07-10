@@ -19,6 +19,12 @@ type AzChannel struct {
 	ChannelDescription   string
 	ImportMessagesStatus bool
 	DataDirectories      []string
+	ImportedFiles        []StatusImportedMessages
+}
+
+type StatusImportedMessages struct {
+	FileName   string
+	RespStatus map[int]int
 }
 
 func saveState(state *AzTeam) {

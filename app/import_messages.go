@@ -57,8 +57,9 @@ func FindUserById(users *zoho_cliq.Users, id string) zoho_cliq.User {
 	}
 }
 
-func ImportMessages(accessToken string, teamID string, channelID string, dataDir string) {
+func ImportMessages(accessToken string, teamID string, channelID string, dataDir string) ([]StatusImportedMessages, error) {
 
+	var respCodes []StatusImportedMessages
 	logFile, err := os.OpenFile("files/output/import-message.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -152,6 +153,11 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 						} else if respCode == 401 {
 							os.Exit(1)
 							//condition = true
+						} else if respCode == 405 {
+							accessToken, _ = az.GetAzureTokenSecrets(tenantID, clientID, clientSecret)
+							fmt.Println("Token updated!")
+							time.Sleep(3 * time.Second)
+							condition = true
 						} else {
 							condition = false
 						}
@@ -165,9 +171,15 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 
 				if counter == parallelImportMessages {
 					counter = 0
+					wg.Wait()
+
+					tmpResp := &StatusImportedMessages{
+						FileName:   path,
+						RespStatus: responseCounts,
+					}
+					respCodes = append(respCodes, *tmpResp)
 					fmt.Println("Run count GoRoutine: ", parallelImportMessages, " msg loaded: ", msgCount)
 					fmt.Println("Import messages response:", responseCounts)
-					wg.Wait()
 					time.Sleep(3 * time.Second)
 				}
 			}
@@ -180,5 +192,5 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
-
+	return respCodes, nil
 }
