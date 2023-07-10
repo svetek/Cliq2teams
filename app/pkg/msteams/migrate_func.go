@@ -228,7 +228,6 @@ func PushMessageMigrate(accessToken string, teamID string, channelID string, pay
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	defer resp.Body.Close()
 	return resp.StatusCode, fmt.Sprintf("%v - %v\n", resp.Status, string(body)), nil
 }
