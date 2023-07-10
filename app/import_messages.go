@@ -173,21 +173,21 @@ func ImportMessages(accessToken string, teamID string, channelID string, dataDir
 					counter = 0
 					wg.Wait()
 
-					tmpResp := &StatusImportedMessages{
-						FileName:   path,
-						RespStatus: responseCounts,
-					}
-					respCodes = append(respCodes, *tmpResp)
-					for i := range stateApp.Channel {
-						if stateApp.Channel[i].ChannelId == channelID {
-							stateApp.Channel[i].ImportedFiles = respCodes
-							saveState(stateApp)
-						}
-					}
 					fmt.Println("Run count GoRoutine: ", parallelImportMessages, " msg loaded: ", msgCount)
 					fmt.Println("Import messages response:", responseCounts)
 					time.Sleep(3 * time.Second)
 				}
+			}
+		}
+		// Save response code
+		tmpResp := StatusImportedMessages{
+			FileName:   path,
+			RespStatus: responseCounts,
+		}
+		for i := range stateApp.Channel {
+			if stateApp.Channel[i].ChannelId == channelID {
+				stateApp.Channel[i].ImportedFiles = append(stateApp.Channel[i].ImportedFiles, tmpResp)
+				saveState(stateApp)
 			}
 		}
 
