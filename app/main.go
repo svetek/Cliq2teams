@@ -100,7 +100,7 @@ func main() {
 	CreateChannelsAndImportMessagesToChannel(&stateApp, accessToken)
 
 	// Close migrate channels and Teams
-	//CloseMigration(&stateApp, accessToken)
+	CloseMigration(&stateApp, accessToken)
 
 }
 
