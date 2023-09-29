@@ -12,7 +12,7 @@ import (
 type TeamCreationResponse struct {
 	statusCode      int
 	requestID       string `json:"Request-Id"`
-	clientRequestID string `json:"Client-Request-Id""`
+	clientRequestID string `json:"Client-Request-Id"`
 	contentLocation string `json:"Content-Location"`
 	location        string `json:"Location"`
 }
@@ -20,7 +20,7 @@ type TeamCreationResponse struct {
 type ChannelCreationResponse struct {
 	statusCode      int
 	requestID       string `json:"Request-Id"`
-	clientRequestID string `json:"Client-Request-Id""`
+	clientRequestID string `json:"Client-Request-Id"`
 	contentLocation string `json:"Content-Location"`
 	location        string `json:"Location"`
 
